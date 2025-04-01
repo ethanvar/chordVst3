@@ -101,21 +101,33 @@ void AudioPluginAudioProcessorEditor::playButtonClicked() {
 void AudioPluginAudioProcessorEditor::openButtonClicked()
 {   
     std::cout << "Open button clicked!" << std::endl;
-    auto chooser = std::make_unique<juce::FileChooser> ("Select a Wave file to play...", juce::File {}, "*.wav");
-    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
-    chooser->launchAsync (chooserFlags, [this] (const juce::FileChooser& fc) 
-        {
-            auto file = fc.getResult();
-            if (file != juce::File {})
-            {
-                auto* reader = formatManager.createReaderFor (file);
-                if (reader != nullptr)
-                {
-                    auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true);
-                    transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
-                    playButton.setEnabled (true);
-                    readerSource.reset (newSource.release());
-                }
-            }
-        });
+    // juce::FileChooser chooser ("Select a Wave file to play...", juce::File::getSpecialLocation(juce::File::userDesktopDirectory), "*.wav", true);
+    // auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+
+    // chooser.launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
+    // {
+    //     auto file = fc.getResult();
+    //     if (file.existsAsFile()) // Ensure the file exists
+    //     {
+    //         juce::AudioFormatReader* reader = formatManager.createReaderFor(file);
+    //         if (reader != nullptr)
+    //         {
+    //             auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
+    //             transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
+    //             playButton.setEnabled(true);
+    //             readerSource.reset(newSource.release());
+    //         }
+    //     }
+    // });
+    chooser = std::make_unique<juce::FileChooser> ("Select a Wave file to play...",
+    juce::File::getSpecialLocation(juce::File::userDesktopDirectory),
+        "*.*");
+    int chooseFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+    chooser->launchAsync(chooseFlags, [this](const juce::FileChooser& fc) {   
+        std::cout << "File chooser callback triggered." << std::endl;
+        auto file = fc.getResult();
+        if (file.existsAsFile()) {
+            DBG("Selected file: " << file.getFullPathName());
+        }
+    });
 }

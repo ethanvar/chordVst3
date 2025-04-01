@@ -35,11 +35,12 @@ private:
 
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
+    std::unique_ptr<juce::FileChooser> chooser;
     juce::TextButton openButton;
     juce::TextButton stopButton;
     juce::TextButton playButton;
     TransportState state;
-    
+
     AudioPluginAudioProcessor& processorRef;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessorEditor)
