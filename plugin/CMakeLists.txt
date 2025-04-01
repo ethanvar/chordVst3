@@ -7,7 +7,7 @@ juce_add_plugin(${PROJECT_NAME}
     COMPANY_NAME "ethanvarghese"
     BUNDLE_ID "com.ethanvarghese.chordvst3"
     VERSION ${PROJECT_VERSION}
-    PLUGIN_MANUFACTURER_CODE "YourManufacturerCode"
+    PLUGIN_MANUFACTURER_CODE "PLAI"
     PLUGIN_CODE "ETHV"
     FORMATS VST3 Standalone
 )
@@ -29,7 +29,9 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_core
         juce::juce_gui_basics
         juce::juce_audio_processors
+        juce::juce_audio_devices
         juce::juce_audio_utils
+        juce::juce_audio_formats
         juce::juce_data_structures
         juce::juce_events
         juce::juce_graphics

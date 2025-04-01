@@ -12,6 +12,7 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                      #endif
                        )
 {
+    formatManager.registerBasicFormats(); 
 }
 
 AudioPluginAudioProcessor::~AudioPluginAudioProcessor()
@@ -89,12 +90,18 @@ void AudioPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
+    auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
+    if (editor != nullptr)
+        editor->transportSource.prepareToPlay (samplesPerBlock, sampleRate);
 }
 
 void AudioPluginAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
+    auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
+    if (editor != nullptr)
+        editor->transportSource.releaseResources();
 }
 
 bool AudioPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -145,12 +152,25 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    {
-        auto* channelData = buffer.getWritePointer (channel);
-        juce::ignoreUnused (channelData);
-        // ..do something to the data...
+    auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
+    
+    if (editor != nullptr && editor->readerSource.get() != nullptr) {
+        // Create an AudioSourceChannelInfo object with our buffer
+        juce::AudioSourceChannelInfo info(buffer);
+        
+        // Let the transport source fill the buffer
+        editor->transportSource.getNextAudioBlock(info);
     }
+    else {
+        // If no file is loaded, just clear the buffer
+        buffer.clear();
+    }
+    // for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    // {
+    //     auto* channelData = buffer.getWritePointer (channel);
+    //     juce::ignoreUnused (channelData);
+    //     // ..do something to the data...
+    // }
 }
 
 //==============================================================================

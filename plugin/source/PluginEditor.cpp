@@ -7,37 +7,115 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 {
     juce::ignoreUnused (processorRef);
     // Make sure that before the constructor has finished, you've set the
-    // editor's size to whatever you need it to be.
+    formatManager.registerBasicFormats();
+    
+    addAndMakeVisible (openButton);
+    openButton.setButtonText ("Open...");
+    openButton.onClick = [this] { openButtonClicked(); };
+    
+    addAndMakeVisible (playButton);
+    playButton.setButtonText ("Play");
+    playButton.onClick = [this] { playButtonClicked(); };
+    playButton.setColour (juce::TextButton::buttonColourId, juce::Colours::green);
+    playButton.setEnabled (false);
+    
+    addAndMakeVisible (stopButton);
+    stopButton.setButtonText ("Stop");
+    stopButton.onClick = [this] { stopButtonClicked(); };
+    stopButton.setColour (juce::TextButton::buttonColourId, juce::Colours::red);
+    stopButton.setEnabled (false);
+    
+    transportSource.addChangeListener (this);
 
-    addAndMakeVisible(playButton);
-    playButton.setButtonText("Play");
-    playButton.onClick = [this]() {
-    };
-
-    setSize (400, 300);
+    setSize (500, 300);
+    setResizable (false, false);
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
 {
+    transportSource.removeChangeListener(this);
 }
 
 //==============================================================================
 void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
 {
     // (Our component is opaque, so we must completely fill the background with a solid colour)
-    g.fillAll (getLookAndFeel().findColour (juce::ResizableWindow::backgroundColourId));
+    g.fillAll (juce::Colours::black);
 
     g.setColour (juce::Colours::white);
-    g.setFont (15.0f);
-    g.drawFittedText ("Hello!", getLocalBounds(), juce::Justification::centred, 1);
 }
 
 void AudioPluginAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds().reduced(20);
     playButton.setBounds(area.removeFromTop(40));
+    stopButton.setBounds(area.removeFromTop(40));
+    openButton.setBounds(area.removeFromTop(40));
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
 }
 
 
+void AudioPluginAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source) {
+    if (source == &transportSource) {
+        if (transportSource.isPlaying()) {
+            changeState (Playing);
+        }
+        else {
+            changeState (Stopped);
+        }
+    }
+}
+
+void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
+    if (state != newState) {
+        state = newState;
+        switch (state) {
+            case Stopped: // [3]
+                stopButton.setEnabled (false);
+                playButton.setEnabled (true);
+                transportSource.setPosition (0.0);
+                break;
+            case Starting: // [4]
+                playButton.setEnabled (false);
+                transportSource.start();
+                break;
+            case Playing: // [5]
+                stopButton.setEnabled (true);
+                break;
+            case Stopping: // [6]
+                transportSource.stop();
+                break;
+        }
+    }
+}
+
+void AudioPluginAudioProcessorEditor::stopButtonClicked() {
+    changeState (Stopping);
+}
+
+void AudioPluginAudioProcessorEditor::playButtonClicked() {
+    changeState (Playing);
+}
+
+void AudioPluginAudioProcessorEditor::openButtonClicked()
+{   
+    std::cout << "Open button clicked!" << std::endl;
+    auto chooser = std::make_unique<juce::FileChooser> ("Select a Wave file to play...", juce::File {}, "*.wav");
+    auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
+    chooser->launchAsync (chooserFlags, [this] (const juce::FileChooser& fc) 
+        {
+            auto file = fc.getResult();
+            if (file != juce::File {})
+            {
+                auto* reader = formatManager.createReaderFor (file);
+                if (reader != nullptr)
+                {
+                    auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true);
+                    transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
+                    playButton.setEnabled (true);
+                    readerSource.reset (newSource.release());
+                }
+            }
+        });
+}
