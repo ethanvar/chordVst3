@@ -13,13 +13,10 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                        )
 {
     formatManager.registerBasicFormats();
-    transportSource.addChangeListener (this);
-
 }
 
 AudioPluginAudioProcessor::~AudioPluginAudioProcessor()
 {
-    transportSource.addChangeListener (this);
 }
 
 //==============================================================================
