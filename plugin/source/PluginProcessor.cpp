@@ -12,11 +12,14 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                      #endif
                        )
 {
-    formatManager.registerBasicFormats(); 
+    formatManager.registerBasicFormats();
+    transportSource.addChangeListener (this);
+
 }
 
 AudioPluginAudioProcessor::~AudioPluginAudioProcessor()
 {
+    transportSource.addChangeListener (this);
 }
 
 //==============================================================================
@@ -90,18 +93,18 @@ void AudioPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
     // Use this method as the place to do any pre-playback
     // initialisation that you need..
     juce::ignoreUnused (sampleRate, samplesPerBlock);
-    auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
-    if (editor != nullptr)
-        editor->transportSource.prepareToPlay (samplesPerBlock, sampleRate);
+    // auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
+    // if (editor != nullptr)
+    transportSource.prepareToPlay (samplesPerBlock, sampleRate);
 }
 
 void AudioPluginAudioProcessor::releaseResources()
 {
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
-    auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
-    if (editor != nullptr)
-        editor->transportSource.releaseResources();
+    // auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
+    // if (editor != nullptr)
+    transportSource.releaseResources();
 }
 
 bool AudioPluginAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts) const
@@ -152,19 +155,20 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // the samples and the outer loop is handling the channels.
     // Alternatively, you can process the samples with the channels
     // interleaved by keeping the same state.
-    auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
+    // auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
     
-    if (editor != nullptr && editor->readerSource.get() != nullptr) {
-        // Create an AudioSourceChannelInfo object with our buffer
-        juce::AudioSourceChannelInfo info(buffer);
+    // if (editor != nullptr && editor->readerSource.get() != nullptr) {
+    //     // Create an AudioSourceChannelInfo object with our buffer
+    //     juce::AudioSourceChannelInfo info(buffer);
         
-        // Let the transport source fill the buffer
-        editor->transportSource.getNextAudioBlock(info);
-    }
-    else {
-        // If no file is loaded, just clear the buffer
-        buffer.clear();
-    }
+    //     // Let the transport source fill the buffer
+    //     editor->transportSource.getNextAudioBlock(info);
+    // }
+    // else {
+    //     // If no file is loaded, just clear the buffer
+    //     buffer.clear();
+    // }
+    transportSource.getNextAudioBlock(juce::AudioSourceChannelInfo(buffer));
     // for (int channel = 0; channel < totalNumInputChannels; ++channel)
     // {
     //     auto* channelData = buffer.getWritePointer (channel);
@@ -200,9 +204,27 @@ void AudioPluginAudioProcessor::setStateInformation (const void* data, int sizeI
     juce::ignoreUnused (data, sizeInBytes);
 }
 
+void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
+{
+    if (audioFile.existsAsFile()) {
+        std::cout<< "Selected file: " << audioFile.getFullPathName() << std::endl;
+        auto* reader = formatManager.createReaderFor (audioFile); // [10]
+        if (reader != nullptr)
+        {   
+            std::cout << "Format created: " << reader->getFormatName() << std::endl;
+            auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true); // [11]
+            transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate); // [12]
+            // playButton.setEnabled (true); // [13]
+            readerSource.reset (newSource.release()); // [14]
+        }
+    }
+}
+
 //==============================================================================
 // This creates new instances of the plugin..
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new AudioPluginAudioProcessor();
 }
+
+

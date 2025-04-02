@@ -7,8 +7,8 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 {
     juce::ignoreUnused (processorRef);
     // Make sure that before the constructor has finished, you've set the
-    formatManager.registerBasicFormats();
-    
+    // formatManager.registerBasicFormats();
+
     addAndMakeVisible (openButton);
     openButton.setButtonText ("Open...");
     openButton.onClick = [this] { openButtonClicked(); };
@@ -25,7 +25,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     stopButton.setColour (juce::TextButton::buttonColourId, juce::Colours::red);
     stopButton.setEnabled (false);
     
-    transportSource.addChangeListener (this);
+    processorRef.transportSource.addChangeListener (this);
 
     setSize (500, 300);
     setResizable (false, false);
@@ -33,7 +33,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
 {
-    transportSource.removeChangeListener(this);
+    processorRef.transportSource.removeChangeListener(this);
 }
 
 //==============================================================================
@@ -57,8 +57,8 @@ void AudioPluginAudioProcessorEditor::resized()
 
 
 void AudioPluginAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source) {
-    if (source == &transportSource) {
-        if (transportSource.isPlaying()) {
+    if (source == &processorRef.transportSource) { // [2]
+        if (processorRef.transportSource.isPlaying()) {
             changeState (Playing);
         }
         else {
@@ -74,17 +74,17 @@ void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
             case Stopped: // [3]
                 stopButton.setEnabled (false);
                 playButton.setEnabled (true);
-                transportSource.setPosition (0.0);
+                processorRef.transportSource.setPosition (0.0);
                 break;
             case Starting: // [4]
                 playButton.setEnabled (false);
-                transportSource.start();
+                processorRef.transportSource.start();
                 break;
             case Playing: // [5]
                 stopButton.setEnabled (true);
                 break;
             case Stopping: // [6]
-                transportSource.stop();
+                processorRef.transportSource.stop();
                 break;
         }
     }
@@ -101,33 +101,15 @@ void AudioPluginAudioProcessorEditor::playButtonClicked() {
 void AudioPluginAudioProcessorEditor::openButtonClicked()
 {   
     std::cout << "Open button clicked!" << std::endl;
-    // juce::FileChooser chooser ("Select a Wave file to play...", juce::File::getSpecialLocation(juce::File::userDesktopDirectory), "*.wav", true);
-    // auto chooserFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
 
-    // chooser.launchAsync(chooserFlags, [this](const juce::FileChooser& fc)
-    // {
-    //     auto file = fc.getResult();
-    //     if (file.existsAsFile()) // Ensure the file exists
-    //     {
-    //         juce::AudioFormatReader* reader = formatManager.createReaderFor(file);
-    //         if (reader != nullptr)
-    //         {
-    //             auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
-    //             transportSource.setSource(newSource.get(), 0, nullptr, reader->sampleRate);
-    //             playButton.setEnabled(true);
-    //             readerSource.reset(newSource.release());
-    //         }
-    //     }
-    // });
-    chooser = std::make_unique<juce::FileChooser> ("Select a Wave file to play...",
-    juce::File::getSpecialLocation(juce::File::userDesktopDirectory),
-        "*.*");
+    chooser = std::make_unique<juce::FileChooser> ("Select a Wave file to play...", 
+                                                    juce::File::getSpecialLocation(juce::File::userDesktopDirectory),
+                                                    "*.*");
     int chooseFlags = juce::FileBrowserComponent::openMode | juce::FileBrowserComponent::canSelectFiles;
     chooser->launchAsync(chooseFlags, [this](const juce::FileChooser& fc) {   
         std::cout << "File chooser callback triggered." << std::endl;
         auto file = fc.getResult();
-        if (file.existsAsFile()) {
-            DBG("Selected file: " << file.getFullPathName());
-        }
+        processorRef.loadFile(file);
+        playButton.setEnabled (true);
     });
 }

@@ -13,9 +13,9 @@ public:
     void paint (juce::Graphics&) override;
     void resized() override;
 
-    juce::AudioFormatManager formatManager;
-    std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
-    juce::AudioTransportSource transportSource;
+    // juce::AudioFormatManager formatManager;
+    // std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
+    // juce::AudioTransportSource transportSource;
 
 
 private:

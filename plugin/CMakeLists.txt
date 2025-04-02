@@ -47,4 +47,5 @@ target_compile_definitions(${PROJECT_NAME}
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
         JUCE_VST_CAN_REPLACE_VST2=0
+        JUCE_USE_MP3AUDIOFORMAT=1
 )
