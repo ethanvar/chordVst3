@@ -4,6 +4,10 @@ project(chordVst3)
 
 set(CMAKE_CXX_STANDARD 23)
 
+if(NOT DEFINED LIB_DIR)
+    set(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libs")
+endif()
+
 set(LIB_DIR ${CMAKE_CURRENT_SOURCE_DIR}/libs)
 include(cmake/cpm.cmake)
 
