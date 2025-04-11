@@ -92,6 +92,7 @@ void AudioPluginAudioProcessor::prepareToPlay (double sampleRate, int samplesPer
     juce::ignoreUnused (sampleRate, samplesPerBlock);
     // auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
     // if (editor != nullptr)
+    std::cout << "Preparing transport source with sample rate: " << sampleRate << " and block size: " << samplesPerBlock << std::endl;
     transportSource.prepareToPlay (samplesPerBlock, sampleRate);
 }
 
@@ -154,24 +155,14 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     // interleaved by keeping the same state.
     // auto* editor = dynamic_cast<AudioPluginAudioProcessorEditor*>(getActiveEditor());
     
-    // if (editor != nullptr && editor->readerSource.get() != nullptr) {
-    //     // Create an AudioSourceChannelInfo object with our buffer
-    //     juce::AudioSourceChannelInfo info(buffer);
+    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    {
+        auto* channelData = buffer.getWritePointer (channel);
+        juce::ignoreUnused (channelData);
+        transportSource.getNextAudioBlock(juce::AudioSourceChannelInfo(buffer));
         
-    //     // Let the transport source fill the buffer
-    //     editor->transportSource.getNextAudioBlock(info);
-    // }
-    // else {
-    //     // If no file is loaded, just clear the buffer
-    //     buffer.clear();
-    // }
-    transportSource.getNextAudioBlock(juce::AudioSourceChannelInfo(buffer));
-    // for (int channel = 0; channel < totalNumInputChannels; ++channel)
-    // {
-    //     auto* channelData = buffer.getWritePointer (channel);
-    //     juce::ignoreUnused (channelData);
-    //     // ..do something to the data...
-    // }
+        // ..do something to the data...
+    }
 }
 
 //==============================================================================
@@ -208,10 +199,11 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
         auto* reader = formatManager.createReaderFor (audioFile); // [10]
         if (reader != nullptr)
         {   
-            std::cout << "Format created: " << reader->getFormatName() << std::endl;
+            std::cout << "Format created: " << reader->getFormatName() << std::endl;\
             auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true); // [11]
             transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate); // [12]
             // playButton.setEnabled (true); // [13]
+            std::cout << transportSource.getLengthInSeconds() << std::endl; 
             readerSource.reset (newSource.release()); // [14]
         }
     }
