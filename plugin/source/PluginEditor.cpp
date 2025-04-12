@@ -95,7 +95,8 @@ void AudioPluginAudioProcessorEditor::stopButtonClicked() {
 }
 
 void AudioPluginAudioProcessorEditor::playButtonClicked() {
-    changeState (Playing);
+    std::cout << processorRef.transportSource.getLengthInSeconds() << std::endl; 
+    changeState (Starting);
 }
 
 void AudioPluginAudioProcessorEditor::openButtonClicked()
