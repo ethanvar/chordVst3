@@ -23,7 +23,9 @@ private:
         Stopped,
         Starting,
         Playing,
-        Stopping
+        Stopping,
+        Pausing,
+        Paused
     };
 
     void changeListenerCallback (juce::ChangeBroadcaster* source);

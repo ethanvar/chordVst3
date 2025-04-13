@@ -61,8 +61,11 @@ void AudioPluginAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadc
         if (processorRef.transportSource.isPlaying()) {
             changeState (Playing);
         }
-        else {
+        else if ((state == Stopping) || (state == Playing)){
             changeState (Stopped);
+        }
+        else if (state == Pausing) {
+            changeState (Paused);
         }
     }
 }
@@ -71,19 +74,29 @@ void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
     if (state != newState) {
         state = newState;
         switch (state) {
-            case Stopped: // [3]
-                stopButton.setEnabled (false);
+            case Stopped:
+                playButton.setButtonText ("Play");
+                stopButton.setButtonText ("Stop");
+                // stopButton.setEnabled (false);
                 playButton.setEnabled (true);
                 processorRef.transportSource.setPosition (0.0);
                 break;
             case Starting: // [4]
-                playButton.setEnabled (false);
                 processorRef.transportSource.start();
                 break;
             case Playing: // [5]
+                playButton.setButtonText ("Pause");
+                stopButton.setButtonText ("Stop");
                 stopButton.setEnabled (true);
                 break;
-            case Stopping: // [6]
+            case Pausing:
+                processorRef.transportSource.stop();
+                break;
+            case Paused:
+                playButton.setButtonText ("Resume");
+                stopButton.setButtonText ("Set to 0:00");
+                break;
+            case Stopping:
                 processorRef.transportSource.stop();
                 break;
         }
@@ -91,12 +104,21 @@ void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
 }
 
 void AudioPluginAudioProcessorEditor::stopButtonClicked() {
-    changeState (Stopping);
+    if (state == Paused) {
+        changeState (Stopped);
+    }
+    else {
+        changeState (Stopping);
+    }
 }
 
 void AudioPluginAudioProcessorEditor::playButtonClicked() {
-    std::cout << processorRef.transportSource.getLengthInSeconds() << std::endl; 
-    changeState (Starting);
+    std::cout << processorRef.transportSource.getLengthInSeconds() << std::endl;
+    if ((state == Paused) || (state == Stopped)) {
+        changeState (Starting);
+    } else if (state == Playing) {
+        changeState (Pausing);
+    }
 }
 
 void AudioPluginAudioProcessorEditor::openButtonClicked()
