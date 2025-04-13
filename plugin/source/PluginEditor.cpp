@@ -27,7 +27,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     
     processorRef.transportSource.addChangeListener (this);
 
-    setSize (500, 300);
+    setSize (600, 360);
     setResizable (false, false);
 }
 
