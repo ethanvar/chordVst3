@@ -11,6 +11,7 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
+                       , thumbnailCache (5), thumbnail (512, formatManager, thumbnailCache)
 {
     formatManager.registerBasicFormats();
 }
@@ -193,7 +194,8 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
             auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true); // [11]
             transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate); // [12]
             // playButton.setEnabled (true); // [13]
-            std::cout << transportSource.getLengthInSeconds() << std::endl; 
+            std::cout << transportSource.getLengthInSeconds() << std::endl;
+            thumbnail.setSource (new juce::FileInputSource (audioFile)); 
             readerSource.reset (newSource.release()); // [14]
         }
     }

@@ -26,9 +26,11 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     stopButton.setEnabled (false);
     
     processorRef.transportSource.addChangeListener (this);
+    processorRef.thumbnail.addChangeListener (this);
 
     setSize (600, 360);
     setResizable (false, false);
+    startTimer (40);
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
@@ -43,6 +45,32 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
     g.fillAll (juce::Colours::black);
 
     g.setColour (juce::Colours::white);
+
+    juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, getHeight() - 180);
+    if (processorRef.thumbnail.getNumChannels() == 0) {
+        paintIfNoFileLoaded (g, thumbnailBounds);
+    } else {
+        paintIfFileLoaded (g, thumbnailBounds);
+    }
+}
+
+void AudioPluginAudioProcessorEditor::paintIfNoFileLoaded(juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds) {
+    g.setColour (juce::Colours::darkgrey);
+    g.fillRect (thumbnailBounds);
+    g.setColour (juce::Colours::white);
+    g.drawFittedText ("No File Loaded", thumbnailBounds, juce::Justification::centred, 1);
+}
+
+void AudioPluginAudioProcessorEditor::paintIfFileLoaded (juce::Graphics & g, const juce::Rectangle<int>& thumbnailBounds) {
+    g.setColour (juce::Colours::white);
+    g.fillRect (thumbnailBounds);
+    g.setColour (juce::Colours::red);
+    processorRef.thumbnail.drawChannels (g, 
+        thumbnailBounds,
+        0.0,
+        processorRef.thumbnail.getTotalLength(),
+        1.0
+    );
 }
 
 void AudioPluginAudioProcessorEditor::resized()
@@ -68,6 +96,13 @@ void AudioPluginAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadc
             changeState (Paused);
         }
     }
+    if (source == &processorRef.thumbnail) {
+        repaint();
+    } 
+}
+
+void AudioPluginAudioProcessorEditor::thumbnailChanged () {
+    repaint();
 }
 
 void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
@@ -135,4 +170,9 @@ void AudioPluginAudioProcessorEditor::openButtonClicked()
         processorRef.loadFile(file);
         playButton.setEnabled (true);
     });
+}
+
+void AudioPluginAudioProcessorEditor::timerCallback()
+{
+    repaint();
 }

@@ -3,7 +3,7 @@
 #include "PluginProcessor.h"
 
 //==============================================================================
-class AudioPluginAudioProcessorEditor final : public juce::AudioProcessorEditor, public juce::ChangeListener
+class AudioPluginAudioProcessorEditor final : public juce::AudioProcessorEditor, public juce::ChangeListener, private juce::Timer
 {
 public:
     explicit AudioPluginAudioProcessorEditor (AudioPluginAudioProcessor&);
@@ -12,6 +12,8 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+    void paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds);
+    void paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds);
 
     // juce::AudioFormatManager formatManager;
     // std::unique_ptr<juce::AudioFormatReaderSource> readerSource;
@@ -30,6 +32,10 @@ private:
 
     void changeListenerCallback (juce::ChangeBroadcaster* source);
     void changeState (TransportState newState);
+    void thumbnailChanged();
+    void timerCallback() override;
+    // void paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds);
+    // void paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds);
     
     void openButtonClicked();
     void playButtonClicked();
