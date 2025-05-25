@@ -5,7 +5,7 @@
 AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAudioProcessor& p)
     : AudioProcessorEditor (&p), processorRef (p)
 {
-    juce::ignoreUnused (processorRef);
+    // juce::ignoreUnused (processorRef);
     // Make sure that before the constructor has finished, you've set the
     // formatManager.registerBasicFormats();
 
@@ -50,37 +50,15 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
     if (processorRef.thumbnail.getNumChannels() == 0) {
         paintIfNoFileLoaded (g, thumbnailBounds);
     } else {
-        paintIfFileLoaded (g, thumbnailBounds);
+        paintIfFileLoaded (g, thumbnailBounds, processorRef);
     }
 }
-
-void AudioPluginAudioProcessorEditor::paintIfNoFileLoaded(juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds) {
-    g.setColour (juce::Colours::darkgrey);
-    g.fillRect (thumbnailBounds);
-    g.setColour (juce::Colours::white);
-    g.drawFittedText ("No File Loaded", thumbnailBounds, juce::Justification::centred, 1);
-}
-
-void AudioPluginAudioProcessorEditor::paintIfFileLoaded (juce::Graphics & g, const juce::Rectangle<int>& thumbnailBounds) {
-    g.setColour (juce::Colours::white);
-    g.fillRect (thumbnailBounds);
-    g.setColour (juce::Colours::red);
-    processorRef.thumbnail.drawChannels (g, 
-        thumbnailBounds,
-        0.0,
-        processorRef.thumbnail.getTotalLength(),
-        1.0
-    );
-}
-
 void AudioPluginAudioProcessorEditor::resized()
 {
     auto area = getLocalBounds().reduced(20);
     playButton.setBounds(area.removeFromTop(40));
     stopButton.setBounds(area.removeFromTop(40));
     openButton.setBounds(area.removeFromTop(40));
-    // This is generally where you'll want to lay out the positions of any
-    // subcomponents in your editor..
 }
 
 
@@ -102,6 +80,7 @@ void AudioPluginAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadc
 }
 
 void AudioPluginAudioProcessorEditor::thumbnailChanged () {
+    std::cout << "Clicked thumbnail changed." << std::endl;
     repaint();
 }
 

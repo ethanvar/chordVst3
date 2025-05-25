@@ -17,6 +17,7 @@ target_sources(${PROJECT_NAME}
     PRIVATE
         source/PluginProcessor.cpp
         source/PluginEditor.cpp
+        source/WaveTable.cpp
 )
 
 target_include_directories(${PROJECT_NAME}

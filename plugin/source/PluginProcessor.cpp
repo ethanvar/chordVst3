@@ -190,7 +190,7 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
         auto* reader = formatManager.createReaderFor (audioFile); // [10]
         if (reader != nullptr)
         {   
-            std::cout << "Format created: " << reader->getFormatName() << std::endl;\
+            std::cout << "Format created: " << reader->getFormatName() << std::endl;
             auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true); // [11]
             transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate); // [12]
             // playButton.setEnabled (true); // [13]
