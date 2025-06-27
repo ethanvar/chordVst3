@@ -8,6 +8,8 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     // juce::ignoreUnused (processorRef);
     // Make sure that before the constructor has finished, you've set the
     // formatManager.registerBasicFormats();
+    setVisible(true);
+    setSize (600, 600);
 
     addAndMakeVisible (openButton);
     openButton.setButtonText ("Open...");
@@ -28,9 +30,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     processorRef.transportSource.addChangeListener (this);
     processorRef.thumbnail.addChangeListener (this);
 
-    setSize (600, 360);
     setResizable (false, false);
-    startTimer (40);
 }
 
 AudioPluginAudioProcessorEditor::~AudioPluginAudioProcessorEditor()
@@ -46,11 +46,17 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
 
-    juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, getHeight() - 180);
+    juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, 300);
+    juce::Rectangle<int> thumbnailBoundsTwo ((getWidth()/2)-50, 480, 100, 50);
     if (processorRef.thumbnail.getNumChannels() == 0) {
         paintIfNoFileLoaded (g, thumbnailBounds);
+        
     } else {
         paintIfFileLoaded (g, thumbnailBounds, processorRef);
+        g.setColour (juce::Colours::purple);
+        g.fillRect (thumbnailBoundsTwo);
+        g.setColour (juce::Colours::white);
+        g.drawFittedText(std::to_string(processorRef.transportSource.getCurrentPosition()), thumbnailBoundsTwo, juce::Justification::centred, 1);
     }
 }
 void AudioPluginAudioProcessorEditor::resized()
@@ -63,7 +69,7 @@ void AudioPluginAudioProcessorEditor::resized()
 
 
 void AudioPluginAudioProcessorEditor::changeListenerCallback (juce::ChangeBroadcaster* source) {
-    if (source == &processorRef.transportSource) { // [2]
+    if (source == &processorRef.transportSource) {
         if (processorRef.transportSource.isPlaying()) {
             changeState (Playing);
         }
@@ -118,6 +124,7 @@ void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
 }
 
 void AudioPluginAudioProcessorEditor::stopButtonClicked() {
+    stopTimer();
     if (state == Paused) {
         changeState (Stopped);
     }
@@ -129,8 +136,10 @@ void AudioPluginAudioProcessorEditor::stopButtonClicked() {
 void AudioPluginAudioProcessorEditor::playButtonClicked() {
     std::cout << processorRef.transportSource.getLengthInSeconds() << std::endl;
     if ((state == Paused) || (state == Stopped)) {
+        startTimer(40);
         changeState (Starting);
     } else if (state == Playing) {
+        stopTimer();
         changeState (Pausing);
     }
 }
@@ -153,5 +162,6 @@ void AudioPluginAudioProcessorEditor::openButtonClicked()
 
 void AudioPluginAudioProcessorEditor::timerCallback()
 {
+    // std::cout << processorRef.transportSource.getCurrentPosition() << std::endl;
     repaint();
 }
