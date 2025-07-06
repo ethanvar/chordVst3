@@ -4,6 +4,7 @@
 #include <juce_audio_formats/juce_audio_formats.h>
 #include <juce_audio_devices/juce_audio_devices.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include <juce_dsp/juce_dsp.h>
 
 
 //==============================================================================
@@ -52,9 +53,19 @@ public:
     juce::AudioTransportSource transportSource;
     juce::AudioThumbnailCache thumbnailCache;
     juce::AudioThumbnail thumbnail;
+    void pushNextSampleIntoFifo (float sample) noexcept;
+
+    static constexpr auto fftOrder = 10;
+    static constexpr auto fftSize = 1 << fftOrder;
 
 
 private:
+    juce::dsp::FFT forwardFFT;
+    juce::Image spectrogramImage;
+    std::array<float, fftSize> fifo; // [4]
+    std::array<float, fftSize * 2> fftData; // [5]
+    int fifoIndex = 0; // [6]
+    bool nextFFTBlockReady = false; // [7]
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessor)
 };

@@ -18,6 +18,7 @@ target_sources(${PROJECT_NAME}
         source/PluginProcessor.cpp
         source/PluginEditor.cpp
         source/WaveTable.cpp
+        source/SongTimer.cpp
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -37,6 +38,7 @@ target_link_libraries(${PROJECT_NAME}
         juce::juce_events
         juce::juce_graphics
         juce::juce_gui_extra
+        juce::juce_dsp
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_lto_flags

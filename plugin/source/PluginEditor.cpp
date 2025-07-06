@@ -47,16 +47,12 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
     g.setColour (juce::Colours::white);
 
     juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, 300);
-    juce::Rectangle<int> thumbnailBoundsTwo ((getWidth()/2)-50, 480, 100, 50);
     if (processorRef.thumbnail.getNumChannels() == 0) {
         paintIfNoFileLoaded (g, thumbnailBounds);
         
     } else {
-        paintIfFileLoaded (g, thumbnailBounds, processorRef);
-        g.setColour (juce::Colours::purple);
-        g.fillRect (thumbnailBoundsTwo);
-        g.setColour (juce::Colours::white);
-        g.drawFittedText(std::to_string(processorRef.transportSource.getCurrentPosition()), thumbnailBoundsTwo, juce::Justification::centred, 1);
+        juce::Rectangle<int> timeMeasureBounds ((getWidth()/2)-50, 480, 100, 50);
+        paintIfFileLoaded (g, thumbnailBounds, timeMeasureBounds, processorRef);
     }
 }
 void AudioPluginAudioProcessorEditor::resized()

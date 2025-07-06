@@ -11,7 +11,8 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                        .withOutput ("Output", juce::AudioChannelSet::stereo(), true)
                      #endif
                        )
-                       , thumbnailCache (5), thumbnail (512, formatManager, thumbnailCache)
+                       , thumbnailCache (5), thumbnail (512, formatManager, thumbnailCache),forwardFFT (fftOrder),
+      spectrogramImage (juce::Image::RGB, 512, 512, true)
 {
     formatManager.registerBasicFormats();
 }
@@ -136,14 +137,23 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     juce::ignoreUnused (midiMessages);
 
     juce::ScopedNoDenormals noDenormals;
+    juce::AudioSourceChannelInfo bufferToFill = juce::AudioSourceChannelInfo(buffer);
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
+    
+    if (bufferToFill.buffer->getNumChannels() > 0)
+    {
+        auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
+        for (auto i = 0; i < bufferToFill.numSamples; ++i){
+            pushNextSampleIntoFifo (channelData[i]);
+        }
+    }
 
-    transportSource.getNextAudioBlock(juce::AudioSourceChannelInfo(buffer));
+    transportSource.getNextAudioBlock(bufferToFill);
 
     // if (readerSource != nullptr)
     // {
@@ -199,6 +209,24 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
             readerSource.reset (newSource.release()); // [14]
         }
     }
+}
+
+
+void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
+{
+    // if the fifo contains enough data, set a flag to say
+    // that the next line should now be rendered..
+    if (fifoIndex == fftSize) // [8]
+    {
+        if (!nextFFTBlockReady) // [9]
+        {
+            std::fill (fftData.begin(), fftData.end(), 0.0f);
+            std::copy (fifo.begin(), fifo.end(), fftData.begin());
+            nextFFTBlockReady = true;
+        }
+        fifoIndex = 0;
+    }
+    fifo[(size_t) fifoIndex++] = sample;
 }
 
 //==============================================================================
