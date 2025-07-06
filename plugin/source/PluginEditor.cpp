@@ -9,7 +9,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     // Make sure that before the constructor has finished, you've set the
     // formatManager.registerBasicFormats();
     setVisible(true);
-    setSize (600, 600);
+    setSize (1024, 800);
 
     addAndMakeVisible (openButton);
     openButton.setButtonText ("Open...");
@@ -29,6 +29,8 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     
     processorRef.transportSource.addChangeListener (this);
     processorRef.thumbnail.addChangeListener (this);
+
+    // myimage = juce::ImageFileFormat::loadFrom(juce::File("/mnt/schoolCode/chordchainer/plot8192.png"));
 
     setResizable (false, false);
 }
@@ -97,10 +99,10 @@ void AudioPluginAudioProcessorEditor::changeState (TransportState newState) {
                 playButton.setEnabled (true);
                 processorRef.transportSource.setPosition (0.0);
                 break;
-            case Starting: // [4]
+            case Starting:
                 processorRef.transportSource.start();
                 break;
-            case Playing: // [5]
+            case Playing:
                 playButton.setButtonText ("Pause");
                 stopButton.setButtonText ("Stop");
                 stopButton.setEnabled (true);
@@ -158,6 +160,10 @@ void AudioPluginAudioProcessorEditor::openButtonClicked()
 
 void AudioPluginAudioProcessorEditor::timerCallback()
 {
-    // std::cout << processorRef.transportSource.getCurrentPosition() << std::endl;
-    repaint();
+    if (processorRef.nextFFTBlockReady)
+    {
+        processorRef.drawNextLineOfSpectrogram();
+        processorRef.nextFFTBlockReady = false;
+        repaint();
+    }
 }

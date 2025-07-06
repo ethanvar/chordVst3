@@ -7,4 +7,6 @@ class AudioWaveTable  {
         void paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds);
         void paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds, const juce::Rectangle<int>& timeMeasureBounds, AudioPluginAudioProcessor& processorRef);
         void paintTimer (juce::Graphics& g, const juce::Rectangle<int>& timeMeasureBounds, AudioPluginAudioProcessor& processorRef);
+    private:
+        juce::Image myimage;
 };

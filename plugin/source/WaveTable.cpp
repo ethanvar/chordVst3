@@ -2,7 +2,7 @@
 #include "../include/chordtVst3/WaveTable.h"
 
 AudioWaveTable::AudioWaveTable () {
-
+    myimage = juce::ImageFileFormat::loadFrom(juce::File("/mnt/schoolCode/chordchainer/plot8192.png"));
 };
 
 AudioWaveTable::~AudioWaveTable () {
@@ -21,6 +21,8 @@ void AudioWaveTable::paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle
         1.0
     );
     paintTimer(g, timeMeasureBounds, processorRef);
+    juce::RectanglePlacement placement;
+    g.drawImageWithin(processorRef.getSpectrogram(), thumbnailBounds.getBottomLeft().getX(), timeMeasureBounds.getBottomLeft().getY(), thumbnailBounds.getWidth(), thumbnailBounds.getHeight(), placement, false);
 };
 
 void AudioWaveTable::paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds) {

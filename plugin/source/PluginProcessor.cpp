@@ -201,12 +201,12 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
         if (reader != nullptr)
         {   
             std::cout << "Format created: " << reader->getFormatName() << std::endl;
-            auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true); // [11]
-            transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate); // [12]
+            auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true);
+            transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
             // playButton.setEnabled (true); // [13]
             std::cout << transportSource.getLengthInSeconds() << std::endl;
             thumbnail.setSource (new juce::FileInputSource (audioFile)); 
-            readerSource.reset (newSource.release()); // [14]
+            readerSource.reset (newSource.release());
         }
     }
 }
@@ -227,6 +227,27 @@ void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
         fifoIndex = 0;
     }
     fifo[(size_t) fifoIndex++] = sample;
+}
+
+void AudioPluginAudioProcessor::drawNextLineOfSpectrogram() {
+    int rightHandEdge = spectrogramImage.getWidth() - 1;
+    auto imageHeight = spectrogramImage.getHeight();
+
+    spectrogramImage.moveImageSection (0, 0, 1, 0, rightHandEdge, imageHeight);
+    forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
+    auto maxLevel = juce::FloatVectorOperations::findMinAndMax (fftData.data(), fftSize / 2);
+    juce::Image::BitmapData bitmap { spectrogramImage, rightHandEdge, 0, 1, imageHeight, juce::Image::BitmapData::writeOnly };
+    for (auto y = 1; y < imageHeight; ++y)
+    {
+        auto skewedProportionY = 1.0f - std::exp (std::log ((float) y / (float) imageHeight) * 0.2f);
+        auto fftDataIndex = (size_t) juce::jlimit (0, fftSize / 2, (int) (skewedProportionY * fftSize / 2));
+        auto level = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 1.0f);
+        bitmap.setPixelColour (0, y, juce::Colour::fromHSV (level, 1.0f, level, 1.0f));
+    }
+}
+
+juce::Image& AudioPluginAudioProcessor::getSpectrogram() {
+    return spectrogramImage;
 }
 
 //==============================================================================

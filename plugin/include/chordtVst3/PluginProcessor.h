@@ -54,10 +54,12 @@ public:
     juce::AudioThumbnailCache thumbnailCache;
     juce::AudioThumbnail thumbnail;
     void pushNextSampleIntoFifo (float sample) noexcept;
+    void drawNextLineOfSpectrogram();
 
     static constexpr auto fftOrder = 10;
     static constexpr auto fftSize = 1 << fftOrder;
-
+    bool nextFFTBlockReady = false; // [7]
+    juce::Image& getSpectrogram();
 
 private:
     juce::dsp::FFT forwardFFT;
@@ -65,7 +67,6 @@ private:
     std::array<float, fftSize> fifo; // [4]
     std::array<float, fftSize * 2> fftData; // [5]
     int fifoIndex = 0; // [6]
-    bool nextFFTBlockReady = false; // [7]
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessor)
 };
