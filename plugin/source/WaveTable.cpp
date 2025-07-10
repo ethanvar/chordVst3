@@ -22,7 +22,7 @@ void AudioWaveTable::paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle
     );
     paintTimer(g, timeMeasureBounds, processorRef);
     juce::RectanglePlacement placement;
-    g.drawImageWithin(processorRef.getSpectrogram(), thumbnailBounds.getBottomLeft().getX(), timeMeasureBounds.getBottomLeft().getY(), thumbnailBounds.getWidth(), thumbnailBounds.getHeight(), placement, false);
+    g.drawImageWithin(processorRef.getSpectrogram(), thumbnailBounds.getBottomLeft().getX(), timeMeasureBounds.getBottomLeft().getY(), thumbnailBounds.getWidth(), 512, placement, false);
 };
 
 void AudioWaveTable::paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds) {

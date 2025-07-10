@@ -138,6 +138,7 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     juce::ScopedNoDenormals noDenormals;
     juce::AudioSourceChannelInfo bufferToFill = juce::AudioSourceChannelInfo(buffer);
+    // std::cout << "how does this work" << std::endl;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
@@ -145,10 +146,23 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
         buffer.clear (i, 0, buffer.getNumSamples());
 
     
-    if (bufferToFill.buffer->getNumChannels() > 0)
-    {
+    // if (bufferToFill.buffer->getNumChannels() < 1)
+    // {
+    //     auto* left = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
+    //     auto* right = bufferToFill.buffer->getReadPointer (1, bufferToFill.startSample);
+    //     for (auto i = 0; i < bufferToFill.numSamples; ++i){
+    //         pushNextSampleIntoFifo (0.5f * (left[i] + right[i]));
+    //     }
+    // } else {
+    //     auto* left = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
+    //     for (auto i = 0; i < bufferToFill.numSamples; ++i){
+    //         pushNextSampleIntoFifo ((left[i]));
+    //     }
+    // }
+
+    if (bufferToFill.buffer->getNumChannels() > 0) {
         auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
-        for (auto i = 0; i < bufferToFill.numSamples; ++i){
+        for (auto i = 0; i < bufferToFill.numSamples; ++i) {
             pushNextSampleIntoFifo (channelData[i]);
         }
     }
@@ -230,19 +244,20 @@ void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
 }
 
 void AudioPluginAudioProcessor::drawNextLineOfSpectrogram() {
-    int rightHandEdge = spectrogramImage.getWidth() - 1;
+    auto rightHandEdge = spectrogramImage.getWidth() - 1;
     auto imageHeight = spectrogramImage.getHeight();
-
     spectrogramImage.moveImageSection (0, 0, 1, 0, rightHandEdge, imageHeight);
     forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
+
     auto maxLevel = juce::FloatVectorOperations::findMinAndMax (fftData.data(), fftSize / 2);
     juce::Image::BitmapData bitmap { spectrogramImage, rightHandEdge, 0, 1, imageHeight, juce::Image::BitmapData::writeOnly };
     for (auto y = 1; y < imageHeight; ++y)
     {
         auto skewedProportionY = 1.0f - std::exp (std::log ((float) y / (float) imageHeight) * 0.2f);
         auto fftDataIndex = (size_t) juce::jlimit (0, fftSize / 2, (int) (skewedProportionY * fftSize / 2));
-        auto level = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 1.0f);
-        bitmap.setPixelColour (0, y, juce::Colour::fromHSV (level, 1.0f, level, 1.0f));
+        auto level = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 20.0f);
+        auto level2 = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 100.0f);
+        bitmap.setPixelColour (0, y, juce::Colour::fromHSV (level2, 2.0f, level, 1.0f));
     }
 }
 

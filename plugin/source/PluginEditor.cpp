@@ -9,7 +9,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     // Make sure that before the constructor has finished, you've set the
     // formatManager.registerBasicFormats();
     setVisible(true);
-    setSize (1024, 800);
+    setSize (1024, 1000);
 
     addAndMakeVisible (openButton);
     openButton.setButtonText ("Open...");
