@@ -12,7 +12,7 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                      #endif
                        )
                        , thumbnailCache (5), thumbnail (512, formatManager, thumbnailCache),forwardFFT (fftOrder),
-      spectrogramImage (juce::Image::RGB, 512, 512, true)
+      spectrogramImage (juce::Image::RGB, 256, 256, true)
 {
     formatManager.registerBasicFormats();
 }
@@ -244,21 +244,37 @@ void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
 }
 
 void AudioPluginAudioProcessor::drawNextLineOfSpectrogram() {
+    std::cout << "Start" << std::endl;
+
     auto rightHandEdge = spectrogramImage.getWidth() - 1;
     auto imageHeight = spectrogramImage.getHeight();
     spectrogramImage.moveImageSection (0, 0, 1, 0, rightHandEdge, imageHeight);
+    std::cout << "fftData.begin(): " << *fftData.begin() << std::endl;
+    
     forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
+    std::cout << "fftData.begin(): " << *fftData.begin() << std::endl;
+
+    std::cout << "Image height: " << imageHeight << std::endl; 
+    std::cout << "fftSize: " << fftSize << std::endl; 
 
     auto maxLevel = juce::FloatVectorOperations::findMinAndMax (fftData.data(), fftSize / 2);
+    std::cout << "get end: " << maxLevel.getEnd() << std::endl;
+    std::cout << "get start: " << maxLevel.getStart() << std::endl;
     juce::Image::BitmapData bitmap { spectrogramImage, rightHandEdge, 0, 1, imageHeight, juce::Image::BitmapData::writeOnly };
-    for (auto y = 1; y < imageHeight; ++y)
-    {
-        auto skewedProportionY = 1.0f - std::exp (std::log ((float) y / (float) imageHeight) * 0.2f);
+    for (auto y = 1; y < imageHeight; ++y) {
+        auto skewedProportionY = 1.0f - std::exp (std::log ((float) y / (float) imageHeight) * 0.9f);
         auto fftDataIndex = (size_t) juce::jlimit (0, fftSize / 2, (int) (skewedProportionY * fftSize / 2));
-        auto level = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 20.0f);
-        auto level2 = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 100.0f);
-        bitmap.setPixelColour (0, y, juce::Colour::fromHSV (level2, 2.0f, level, 1.0f));
+        auto level = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 1.0f);
+        // auto level2 = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 50.0f);
+        bitmap.setPixelColour (0, y, mapFFTValueToColour(level));
     }
+}
+
+juce::Colour AudioPluginAudioProcessor::mapFFTValueToColour(float& value) {
+    // Example:  A more dramatic gradient
+    float scaledValue = std::max(0.0f, std::min(1.0f, value)); // Clamp to 0-1
+    float hue = (scaledValue * 360.0f); // Simple hue mapping
+    return juce::Colour::fromHSV(hue, 1.0f, value, 1.0f);
 }
 
 juce::Image& AudioPluginAudioProcessor::getSpectrogram() {

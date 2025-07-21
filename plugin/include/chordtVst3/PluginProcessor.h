@@ -67,6 +67,7 @@ private:
     std::array<float, fftSize> fifo; // [4]
     std::array<float, fftSize * 2> fftData; // [5]
     int fifoIndex = 0; // [6]
+    juce::Colour mapFFTValueToColour(float& value);
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AudioPluginAudioProcessor)
 };
