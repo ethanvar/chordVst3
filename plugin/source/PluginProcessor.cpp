@@ -12,7 +12,7 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                      #endif
                        )
                        , thumbnailCache (5), thumbnail (512, formatManager, thumbnailCache),forwardFFT (fftOrder),
-      spectrogramImage (juce::Image::RGB, 256, 256, true)
+      spectrogramImage (juce::Image::RGB, 384, 384, true)
 {
     formatManager.registerBasicFormats();
 }
@@ -138,27 +138,14 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
 
     juce::ScopedNoDenormals noDenormals;
     juce::AudioSourceChannelInfo bufferToFill = juce::AudioSourceChannelInfo(buffer);
-    // std::cout << "how does this work" << std::endl;
     auto totalNumInputChannels  = getTotalNumInputChannels();
     auto totalNumOutputChannels = getTotalNumOutputChannels();
 
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-    
-    // if (bufferToFill.buffer->getNumChannels() < 1)
-    // {
-    //     auto* left = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
-    //     auto* right = bufferToFill.buffer->getReadPointer (1, bufferToFill.startSample);
-    //     for (auto i = 0; i < bufferToFill.numSamples; ++i){
-    //         pushNextSampleIntoFifo (0.5f * (left[i] + right[i]));
-    //     }
-    // } else {
-    //     auto* left = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
-    //     for (auto i = 0; i < bufferToFill.numSamples; ++i){
-    //         pushNextSampleIntoFifo ((left[i]));
-    //     }
-    // }
+
+    transportSource.getNextAudioBlock(bufferToFill);
 
     if (bufferToFill.buffer->getNumChannels() > 0) {
         auto* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
@@ -166,18 +153,6 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
             pushNextSampleIntoFifo (channelData[i]);
         }
     }
-
-    transportSource.getNextAudioBlock(bufferToFill);
-
-    // if (readerSource != nullptr)
-    // {
-    //     juce::AudioSourceChannelInfo info(buffer);
-    //     transportSource.getNextAudioBlock(info);
-    // }
-    // else
-    // {
-    //     buffer.clear(); // Clear the buffer if no file is loaded
-    // }
 }
 
 //==============================================================================
@@ -244,22 +219,14 @@ void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
 }
 
 void AudioPluginAudioProcessor::drawNextLineOfSpectrogram() {
-    std::cout << "Start" << std::endl;
-
     auto rightHandEdge = spectrogramImage.getWidth() - 1;
     auto imageHeight = spectrogramImage.getHeight();
     spectrogramImage.moveImageSection (0, 0, 1, 0, rightHandEdge, imageHeight);
-    std::cout << "fftData.begin(): " << *fftData.begin() << std::endl;
-    
+    juce::dsp::WindowingFunction<float> window(fftSize, juce::dsp::WindowingFunction<float>::hann, true);
+    window.multiplyWithWindowingTable(fftData.data(), fftSize);
     forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
-    std::cout << "fftData.begin(): " << *fftData.begin() << std::endl;
-
-    std::cout << "Image height: " << imageHeight << std::endl; 
-    std::cout << "fftSize: " << fftSize << std::endl; 
 
     auto maxLevel = juce::FloatVectorOperations::findMinAndMax (fftData.data(), fftSize / 2);
-    std::cout << "get end: " << maxLevel.getEnd() << std::endl;
-    std::cout << "get start: " << maxLevel.getStart() << std::endl;
     juce::Image::BitmapData bitmap { spectrogramImage, rightHandEdge, 0, 1, imageHeight, juce::Image::BitmapData::writeOnly };
     for (auto y = 1; y < imageHeight; ++y) {
         auto skewedProportionY = 1.0f - std::exp (std::log ((float) y / (float) imageHeight) * 0.9f);
@@ -271,9 +238,8 @@ void AudioPluginAudioProcessor::drawNextLineOfSpectrogram() {
 }
 
 juce::Colour AudioPluginAudioProcessor::mapFFTValueToColour(float& value) {
-    // Example:  A more dramatic gradient
-    float scaledValue = std::max(0.0f, std::min(1.0f, value)); // Clamp to 0-1
-    float hue = (scaledValue * 360.0f); // Simple hue mapping
+    float scaledValue = std::max(0.0f, std::min(1.0f, value));
+    float hue = (scaledValue * 360.0f);
     return juce::Colour::fromHSV(hue, 1.0f, value, 1.0f);
 }
 
