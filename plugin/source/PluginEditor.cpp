@@ -9,7 +9,7 @@ AudioPluginAudioProcessorEditor::AudioPluginAudioProcessorEditor (AudioPluginAud
     // Make sure that before the constructor has finished, you've set the
     // formatManager.registerBasicFormats();
     setVisible(true);
-    setSize (1024, 1000);
+    setSize (1024, 768);
 
     addAndMakeVisible (openButton);
     openButton.setButtonText ("Open...");
@@ -48,12 +48,12 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
 
     g.setColour (juce::Colours::white);
 
-    juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, 300);
+    juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, getHeight()/5);
     if (processorRef.thumbnail.getNumChannels() == 0) {
         paintIfNoFileLoaded (g, thumbnailBounds);
         
     } else {
-        juce::Rectangle<int> timeMeasureBounds ((getWidth()/2)-50, 480, 100, 50);
+        juce::Rectangle<int> timeMeasureBounds ((getWidth()/2)-50, thumbnailBounds.getBottom(), 100, 50);
         paintIfFileLoaded (g, thumbnailBounds, timeMeasureBounds, processorRef);
     }
 }
@@ -154,6 +154,7 @@ void AudioPluginAudioProcessorEditor::openButtonClicked()
         std::cout << "File chooser callback triggered." << std::endl;
         auto file = fc.getResult();
         processorRef.loadFile(file);
+        changeState (Stopped);
         playButton.setEnabled (true);
     });
 }
