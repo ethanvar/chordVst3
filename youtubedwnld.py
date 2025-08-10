@@ -4,6 +4,10 @@ import os
 
 def download_youtube_audio_as_mp3(url):
     try:
+
+        songs_folder = os.path.join(os.getcwd(), "songs")
+        os.makedirs(songs_folder, exist_ok=True)
+
         # Set up custom headers (optional fix)
         yt = YouTube(url, use_oauth=False, allow_oauth_cache=True)
         print(f"Downloading: {yt.title}")
@@ -16,8 +20,11 @@ def download_youtube_audio_as_mp3(url):
         output_path = audio_stream.download(filename="temp_audio")
         print(f"Downloaded to: {output_path}")
 
+        temp_path = os.path.join(songs_folder, "temp_audio")
+        audio_stream.download(filename=temp_path)
+
         mp3_filename = yt.title.replace(" ", "_").replace("/", "_") + ".mp3"
-        mp3_path = os.path.join(os.getcwd(), mp3_filename)
+        mp3_path = os.path.join(songs_folder, mp3_filename)
 
         print("Converting to MP3...")
         audio = AudioSegment.from_file(output_path)
