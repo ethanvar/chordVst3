@@ -49,12 +49,15 @@ void AudioPluginAudioProcessorEditor::paint (juce::Graphics& g)
     g.setColour (juce::Colours::white);
 
     juce::Rectangle<int> thumbnailBounds (10, 150, getWidth() - 20, getHeight()/5);
+    juce::Rectangle<int> timeMeasureBounds ((getWidth()/2)-50, thumbnailBounds.getBottom(), 100, 50);
+    juce::Rectangle<int> liveSpectogramPlaceholder (thumbnailBounds.getBottomLeft().getX(), timeMeasureBounds.getBottom(), thumbnailBounds.getWidth()/2, 390);
+    juce::Rectangle<int> spectoGramPlaceholder (liveSpectogramPlaceholder.getRight(), timeMeasureBounds.getBottom(), thumbnailBounds.getWidth()/2, 390);
+
     if (processorRef.thumbnail.getNumChannels() == 0) {
-        paintIfNoFileLoaded (g, thumbnailBounds);
+        paintIfNoFileLoaded (g, thumbnailBounds, timeMeasureBounds, liveSpectogramPlaceholder, spectoGramPlaceholder);
         
     } else {
-        juce::Rectangle<int> timeMeasureBounds ((getWidth()/2)-50, thumbnailBounds.getBottom(), 100, 50);
-        paintIfFileLoaded (g, thumbnailBounds, timeMeasureBounds, processorRef);
+        paintIfFileLoaded (g, thumbnailBounds, timeMeasureBounds, liveSpectogramPlaceholder, spectoGramPlaceholder, processorRef);
     }
 }
 void AudioPluginAudioProcessorEditor::resized()

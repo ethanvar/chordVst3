@@ -10,7 +10,7 @@ AudioWaveTable::~AudioWaveTable () {
 };
 
 
-void AudioWaveTable::paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds, const juce::Rectangle<int>& timeMeasureBounds, AudioPluginAudioProcessor& processorRef) {
+void AudioWaveTable::paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds, const juce::Rectangle<int>& timeMeasureBounds, const juce::Rectangle<int>& liveSpectogramPlaceholder, const juce::Rectangle<int>& spectogramPlaceholder, AudioPluginAudioProcessor& processorRef) {
     g.setColour (juce::Colours::white);
     g.fillRect (thumbnailBounds);
     g.setColour (juce::Colours::red);
@@ -22,15 +22,29 @@ void AudioWaveTable::paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle
     );
     paintTimer(g, timeMeasureBounds, processorRef);
     juce::RectanglePlacement placement;
-    g.drawImageWithin(processorRef.getSpectrogram(), thumbnailBounds.getBottomLeft().getX(), timeMeasureBounds.getBottom(), thumbnailBounds.getWidth(), 390, placement, false);
+    g.drawImageWithin(processorRef.getSpectrogram(), liveSpectogramPlaceholder.getTopLeft().getX(), liveSpectogramPlaceholder.getTopLeft().getY(), liveSpectogramPlaceholder.getWidth(), liveSpectogramPlaceholder.getHeight(), placement, false);
 };
 
-void AudioWaveTable::paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds) {
-    
+void AudioWaveTable::paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds, const juce::Rectangle<int>& timeMeasureBounds, const juce::Rectangle<int>& liveSpectogramPlaceholder, const juce::Rectangle<int>& spectogramPlaceholder) {
     g.setColour (juce::Colours::darkgrey);
     g.fillRect (thumbnailBounds);
     g.setColour (juce::Colours::white);
     g.drawFittedText ("No File Loaded", thumbnailBounds, juce::Justification::centred, 1);
+
+    g.setColour (juce::Colours::purple);
+    g.fillRect (timeMeasureBounds);
+    g.setColour (juce::Colours::white);
+    g.drawFittedText("0", timeMeasureBounds, juce::Justification::centred, 1);
+
+    g.setColour (juce::Colours::olive);
+    g.fillRect (liveSpectogramPlaceholder);
+    g.setColour (juce::Colours::white);
+    g.drawFittedText ("Live Spectogram", liveSpectogramPlaceholder, juce::Justification::centred, 1);
+
+    g.setColour (juce::Colours::darkblue);
+    g.fillRect (spectogramPlaceholder);
+    g.setColour (juce::Colours::white);
+    g.drawFittedText ("Static Spectogram", spectogramPlaceholder, juce::Justification::centred, 1);
 };
 
 void AudioWaveTable::paintTimer (juce::Graphics& g, const juce::Rectangle<int>& timeMeasureBounds, AudioPluginAudioProcessor& processorRef) {

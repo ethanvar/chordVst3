@@ -200,6 +200,10 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
     }
 }
 
+void AudioPluginAudioProcessor::processEntireSpectogram(const juce::AudioTransportSource& transportSource) {
+    // use tranposrtSource to read ahead of live processBlock and process spectogram in advance
+}
+
 
 void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
 {
