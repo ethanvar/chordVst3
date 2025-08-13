@@ -55,7 +55,7 @@ public:
     juce::AudioThumbnail thumbnail;
     void pushNextSampleIntoFifo (float sample) noexcept;
     void drawNextLineOfSpectrogram();
-    void processEntireSpectogram(const juce::AudioTransportSource& tranportSource);
+    void processEntireSpectogram(juce::AudioFormatReader *reader);
 
     static constexpr auto fftOrder = 10;
     static constexpr auto fftSize = 1 << fftOrder;

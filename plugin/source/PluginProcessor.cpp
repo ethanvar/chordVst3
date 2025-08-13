@@ -187,21 +187,41 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
     if (audioFile.existsAsFile()) {
         std::cout<< "Selected file: " << audioFile.getFullPathName() << std::endl;
         auto* reader = formatManager.createReaderFor (audioFile); // [10]
+        
         if (reader != nullptr)
         {   
+            processEntireSpectogram(reader);
             std::cout << "Format created: " << reader->getFormatName() << std::endl;
             auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true);
             transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
             // playButton.setEnabled (true); // [13]
-            std::cout << transportSource.getLengthInSeconds() << std::endl;
+            // std::cout << transportSource.getLengthInSeconds() << std::endl;
             thumbnail.setSource (new juce::FileInputSource (audioFile)); 
             readerSource.reset (newSource.release());
         }
     }
 }
 
-void AudioPluginAudioProcessor::processEntireSpectogram(const juce::AudioTransportSource& transportSource) {
+void AudioPluginAudioProcessor::processEntireSpectogram(juce::AudioFormatReader *reader) {
     // use tranposrtSource to read ahead of live processBlock and process spectogram in advance
+    std::cout << "total sample length: " << reader->lengthInSamples << std::endl;
+    std::cout << "bit shifting: " << (1 << 10) << std::endl;
+
+    juce::AudioBuffer<float> fullBuffer((int)reader->numChannels, (int)reader->lengthInSamples);
+
+    if (!reader->read(&fullBuffer, 0,(int)reader->lengthInSamples, 0, true, true)) {
+        std::cout << "Failed to read audio file" << std::endl;
+        return;
+    }
+
+    int index = 0;
+
+    for (int i = 0; i <= reader->lengthInSamples; i++) {
+        fifo[(size_t) index++] = fullBuffer.getSample(1, i);
+        if (i == fftSize) {
+            std::cout << "reached max: " << i << std::endl;
+        }
+    }
 }
 
 
