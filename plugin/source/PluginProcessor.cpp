@@ -12,7 +12,7 @@ AudioPluginAudioProcessor::AudioPluginAudioProcessor()
                      #endif
                        )
                        , thumbnailCache (5), thumbnail (512, formatManager, thumbnailCache),forwardFFT (fftOrder),
-      spectrogramImage (juce::Image::RGB, 384, 384, true)
+      spectrogramImage (juce::Image::RGB, 384, 384, true), instantSpectogram(juce::Image::RGB, 384, 384, true)
 {
     formatManager.registerBasicFormats();
 }
@@ -144,7 +144,6 @@ void AudioPluginAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer,
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
-
     transportSource.getNextAudioBlock(bufferToFill);
 
     if (bufferToFill.buffer->getNumChannels() > 0) {
@@ -190,13 +189,13 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
         
         if (reader != nullptr)
         {   
-            processEntireSpectogram(reader);
+            processEntireSpectogram(reader); 
             std::cout << "Format created: " << reader->getFormatName() << std::endl;
             auto newSource = std::make_unique<juce::AudioFormatReaderSource> (reader, true);
             transportSource.setSource (newSource.get(), 0, nullptr, reader->sampleRate);
             // playButton.setEnabled (true); // [13]
             // std::cout << transportSource.getLengthInSeconds() << std::endl;
-            thumbnail.setSource (new juce::FileInputSource (audioFile)); 
+            thumbnail.setSource (new juce::FileInputSource (audioFile));
             readerSource.reset (newSource.release());
         }
     }
@@ -204,10 +203,15 @@ void AudioPluginAudioProcessor::loadFile(const juce::File& audioFile)
 
 void AudioPluginAudioProcessor::processEntireSpectogram(juce::AudioFormatReader *reader) {
     // use tranposrtSource to read ahead of live processBlock and process spectogram in advance
-    std::cout << "total sample length: " << reader->lengthInSamples << std::endl;
+    // std::cout << "total sample length: " << reader->lengthInSamples << std::endl;
     std::cout << "bit shifting: " << (1 << 10) << std::endl;
 
     juce::AudioBuffer<float> fullBuffer((int)reader->numChannels, (int)reader->lengthInSamples);
+    // juce::AudioSourceChannelInfo bufferToFill = juce::AudioSourceChannelInfo(fullBuffer);
+
+    std::array<float, fftSize> firstOut;
+    std::array<float, fftSize * 2> fourierData;
+
 
     if (!reader->read(&fullBuffer, 0,(int)reader->lengthInSamples, 0, true, true)) {
         std::cout << "Failed to read audio file" << std::endl;
@@ -216,10 +220,14 @@ void AudioPluginAudioProcessor::processEntireSpectogram(juce::AudioFormatReader 
 
     int index = 0;
 
-    for (int i = 0; i <= reader->lengthInSamples; i++) {
-        fifo[(size_t) index++] = fullBuffer.getSample(1, i);
-        if (i == fftSize) {
-            std::cout << "reached max: " << i << std::endl;
+    for (int i = 0; i <= fullBuffer.getNumSamples(); i++) {
+        firstOut[(size_t) index++] = fullBuffer.getSample(0, i);
+        
+        if ((i%fftSize) == 0) {
+            std::fill (fourierData.begin(), fourierData.end(), 0.0f);
+            std::copy (firstOut.begin(), firstOut.end(), fourierData.begin());
+            drawNextLineOfSpectrogram(instantSpectogram, fourierData);
+            index = 0;
         }
     }
 }
@@ -242,21 +250,27 @@ void AudioPluginAudioProcessor::pushNextSampleIntoFifo(float sample) noexcept
     fifo[(size_t) fifoIndex++] = sample;
 }
 
-void AudioPluginAudioProcessor::drawNextLineOfSpectrogram() {
-    auto rightHandEdge = spectrogramImage.getWidth() - 1;
-    auto imageHeight = spectrogramImage.getHeight();
-    spectrogramImage.moveImageSection (0, 0, 1, 0, rightHandEdge, imageHeight);
-    juce::dsp::WindowingFunction<float> window(fftSize, juce::dsp::WindowingFunction<float>::hann, true);
-    window.multiplyWithWindowingTable(fftData.data(), fftSize);
-    forwardFFT.performFrequencyOnlyForwardTransform (fftData.data());
+void AudioPluginAudioProcessor::drawingWrapper() {
+    drawNextLineOfSpectrogram(spectrogramImage, fftData);
+}
 
-    auto maxLevel = juce::FloatVectorOperations::findMinAndMax (fftData.data(), fftSize / 2);
-    juce::Image::BitmapData bitmap { spectrogramImage, rightHandEdge, 0, 1, imageHeight, juce::Image::BitmapData::writeOnly };
+void AudioPluginAudioProcessor::drawNextLineOfSpectrogram(juce::Image &specImage, 
+                                                            std::array<float, fftSize * 2> &fourierData)  {
+    //Add spectogram,  parameter 
+    auto rightHandEdge = specImage.getWidth() - 1;
+    auto imageHeight = specImage.getHeight();
+    specImage.moveImageSection (0, 0, 1, 0, rightHandEdge, imageHeight);
+    juce::dsp::WindowingFunction<float> window(fftSize, juce::dsp::WindowingFunction<float>::hann, true);
+    window.multiplyWithWindowingTable(fourierData.data(), fftSize);
+    forwardFFT.performFrequencyOnlyForwardTransform (fourierData.data());
+
+    auto maxLevel = juce::FloatVectorOperations::findMinAndMax (fourierData.data(), fftSize / 2);
+    juce::Image::BitmapData bitmap { specImage, rightHandEdge, 0, 1, imageHeight, juce::Image::BitmapData::writeOnly };
     for (auto y = 1; y < imageHeight; ++y) {
         auto skewedProportionY = 1.0f - std::exp (std::log ((float) y / (float) imageHeight) * 0.9f);
         auto fftDataIndex = (size_t) juce::jlimit (0, fftSize / 2, (int) (skewedProportionY * fftSize / 2));
-        auto level = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 1.0f);
-        // auto level2 = juce::jmap (fftData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 50.0f);
+        auto level = juce::jmap (fourierData[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 1.0f);
+        // auto level2 = juce::jmap (fftDfourierDataata[fftDataIndex], 0.0f, juce::jmax (maxLevel.getEnd(), 1e-5f), 0.0f, 50.0f);
         bitmap.setPixelColour (0, y, mapFFTValueToColour(level));
     }
 }
@@ -269,6 +283,10 @@ juce::Colour AudioPluginAudioProcessor::mapFFTValueToColour(float& value) {
 
 juce::Image& AudioPluginAudioProcessor::getSpectrogram() {
     return spectrogramImage;
+}
+
+juce::Image& AudioPluginAudioProcessor::getInstantSpectogram() {
+    return instantSpectogram;
 }
 
 //==============================================================================

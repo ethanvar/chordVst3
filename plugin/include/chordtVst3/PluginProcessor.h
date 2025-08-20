@@ -54,17 +54,21 @@ public:
     juce::AudioThumbnailCache thumbnailCache;
     juce::AudioThumbnail thumbnail;
     void pushNextSampleIntoFifo (float sample) noexcept;
-    void drawNextLineOfSpectrogram();
+    void drawNextLineOfSpectrogram(juce::Image& specImage, 
+                                    std::array<float, (1 << 10) * 2> &fourierData);
+    void drawingWrapper();
     void processEntireSpectogram(juce::AudioFormatReader *reader);
 
     static constexpr auto fftOrder = 10;
     static constexpr auto fftSize = 1 << fftOrder;
     bool nextFFTBlockReady = false; // [7]
     juce::Image& getSpectrogram();
+    juce::Image& getInstantSpectogram();    
 
 private:
     juce::dsp::FFT forwardFFT;
     juce::Image spectrogramImage;
+    juce::Image instantSpectogram;
     std::array<float, fftSize> fifo; // [4]
     std::array<float, fftSize * 2> fftData; // [5]
     int fifoIndex = 0; // [6]

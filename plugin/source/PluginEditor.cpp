@@ -166,7 +166,7 @@ void AudioPluginAudioProcessorEditor::timerCallback()
 {
     if (processorRef.nextFFTBlockReady)
     {
-        processorRef.drawNextLineOfSpectrogram();
+        processorRef.drawingWrapper();
         processorRef.nextFFTBlockReady = false;
         repaint();
     }
