@@ -63,7 +63,7 @@ public:
     static constexpr auto fftSize = 1 << fftOrder;
     bool nextFFTBlockReady = false; // [7]
     juce::Image& getSpectrogram();
-    juce::Image& getInstantSpectogram();    
+    juce::Image& getInstantSpectogram();
 
 private:
     juce::dsp::FFT forwardFFT;
