@@ -220,10 +220,12 @@ void AudioPluginAudioProcessor::processEntireSpectogram(juce::AudioFormatReader 
 
     int index = 0;
 
+    const int leftoverSampleNumbers = fullBuffer.getNumSamples() % fftSize;
+
     for (int i = 0; i <= fullBuffer.getNumSamples(); i++) {
         firstOut[(size_t) index++] = fullBuffer.getSample(0, i);
         
-        if ((i%fftSize) == 0) {
+        if ((i%fftSize) == 0 || i == leftoverSampleNumbers) {
             std::fill (fourierData.begin(), fourierData.end(), 0.0f);
             std::copy (firstOut.begin(), firstOut.end(), fourierData.begin());
             drawNextLineOfSpectrogram(instantSpectogram, fourierData);

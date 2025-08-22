@@ -23,6 +23,8 @@ void AudioWaveTable::paintIfFileLoaded (juce::Graphics& g, const juce::Rectangle
     paintTimer(g, timeMeasureBounds, processorRef);
     juce::RectanglePlacement placement;
     g.drawImageWithin(processorRef.getSpectrogram(), liveSpectogramPlaceholder.getTopLeft().getX(), liveSpectogramPlaceholder.getTopLeft().getY(), liveSpectogramPlaceholder.getWidth(), liveSpectogramPlaceholder.getHeight(), placement, false);
+    juce::RectanglePlacement placementTwo;
+    g.drawImageWithin(processorRef.getInstantSpectogram(), spectogramPlaceholder.getTopLeft().getX(), spectogramPlaceholder.getTopLeft().getY(), spectogramPlaceholder.getWidth(), spectogramPlaceholder.getHeight(), placementTwo, false);
 };
 
 void AudioWaveTable::paintIfNoFileLoaded (juce::Graphics& g, const juce::Rectangle<int>& thumbnailBounds, const juce::Rectangle<int>& timeMeasureBounds, const juce::Rectangle<int>& liveSpectogramPlaceholder, const juce::Rectangle<int>& spectogramPlaceholder) {
